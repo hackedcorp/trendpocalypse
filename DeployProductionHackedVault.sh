@@ -144,7 +144,7 @@ metadata:
   name: hackedvault-config
 data:
   FSS_API_ENDPOINT: "antimalware.us-1.cloudone.trendmicro.com:443"
-  SECURITY_MODE: "disabled"
+  SECURITY_MODE: "logOnly"
   HTTP_PORT: "3000"
   HTTPS_PORT: "3443"
 
