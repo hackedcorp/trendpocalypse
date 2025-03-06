@@ -1,7 +1,6 @@
 #!/bin/bash
 # step3.sh
 
-# Check if kubectl is installed
 # Check if kubectl is installed, if not install it
 if ! command -v kubectl &> /dev/null; then
   echo "⚠️ kubectl is not installed. Installing now..."
