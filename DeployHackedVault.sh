@@ -53,8 +53,6 @@ docker run -d \
   -e FSS_API_KEY="$FSS_API_KEY" \
   -e USER_USERNAME="user" \
   -e USER_PASSWORD="sdePgqEr4#4tSlvg" \
-  -e ADMIN_USERNAME="admin" \
-  -e ADMIN_PASSWORD="sdePgqEr4#4tSlvg" \
   -e FSS_CUSTOM_TAGS="env:bytevault,team:security" \
   -e SECURITY_MODE="disabled" \
   --name hackedvault \
