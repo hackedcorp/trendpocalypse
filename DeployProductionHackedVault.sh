@@ -2,12 +2,19 @@
 # step3.sh
 
 # Check if kubectl is installed
+# Check if kubectl is installed, if not install it
 if ! command -v kubectl &> /dev/null; then
-  echo "❌ ERROR: kubectl is not installed."
-  echo "🔹 You can install it by following the official Kubernetes documentation:"
-  echo "   👉 https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux"
-  exit 1
+  echo "⚠️ kubectl is not installed. Installing now..."
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  chmod +x kubectl
+  mkdir -p ~/.local/bin
+  mv ./kubectl ~/.local/bin/kubectl
+  echo "✅ kubectl has been installed."
 fi
+
+# Display installed kubectl version
+kubectl version --client
 
 # Prompt the user for inputs
 read -p "Enter AWS Region (default: us-west-2): " AWS_REGION
