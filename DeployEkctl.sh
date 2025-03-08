@@ -2,6 +2,20 @@
 
 set -e  # Exit on any error
 
+# Check if AWS CLI is installed
+if ! command -v aws &>/dev/null; then
+    echo "Installing AWS CLI..."
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+    rm -rf awscliv2.zip aws/
+    echo "AWS CLI installed successfully."
+else
+    echo "AWS CLI is already installed."
+fi
+
+aws --version
+
 # Check if eksctl is installed
 if ! command -v eksctl &>/dev/null; then
     echo "Installing eksctl..."
@@ -42,17 +56,46 @@ if ! aws sts get-caller-identity &>/dev/null; then
     exit 1
 fi
 
-echo "AWS CLI is properly configured. Proceeding with EKS cluster creation."
+echo "AWS CLI is properly configured."
+
+# Prompt user for AWS region
+default_region="us-west-2"
+read -p "Enter the AWS region to deploy the EKS cluster (default: $default_region): " aws_region
+aws_region=${aws_region:-$default_region}
 
 # Prompt user for cluster name
 default_cluster_name="trendpocalypse"
 read -p "Enter the name for the EKS cluster (default: $default_cluster_name): " cluster_name
 cluster_name=${cluster_name:-$default_cluster_name}
 
-echo "Creating EKS cluster: $cluster_name"
+echo "Fetching available SSH key pairs in region $aws_region..."
 
-# Create EKS cluster
+# List all AWS EC2 key pairs in the selected region
+key_pairs=$(aws ec2 describe-key-pairs --region $aws_region --query 'KeyPairs[*].KeyName' --output text)
+
+if [ -z "$key_pairs" ]; then
+    echo "No SSH key pairs found in region $aws_region. You need to create one before proceeding."
+    echo "Use 'aws ec2 create-key-pair --key-name <key-name> --region $aws_region' to create a key."
+    exit 1
+fi
+
+echo "Available SSH Key Pairs:"
+select ssh_key in $key_pairs "Enter a custom key"; do
+    if [ "$ssh_key" == "Enter a custom key" ]; then
+        read -p "Enter your custom SSH key name: " ssh_key
+    fi
+    if [ -n "$ssh_key" ]; then
+        break
+    fi
+done
+
+echo "Selected SSH key: $ssh_key"
+
+echo "Creating EKS cluster: $cluster_name in region $aws_region..."
+
+# Create EKS cluster with selected SSH key
 eksctl create cluster \
+    --region $aws_region \
     --tags Project=$cluster_name \
     --tags owner=Player \
     --tags autostop=no \
@@ -61,6 +104,44 @@ eksctl create cluster \
     --node-volume-size 50 \
     --full-ecr-access \
     --alb-ingress-access \
-    --ssh-access
+    --ssh-access \
+    --ssh-public-key $ssh_key
 
 echo "EKS cluster $cluster_name has been successfully created."
+
+# Deploy the containerized application
+echo "Deploying the container image to EKS..."
+
+# Create a Kubernetes deployment YAML file
+cat <<EOF > deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp08
+  labels:
+    app: webapp08
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp08
+  template:
+    metadata:
+      labels:
+        app: webapp08
+    spec:
+      containers:
+      - name: webapp08
+        image: fafiorim/webapp08:latest
+        ports:
+        - containerPort: 80
+EOF
+
+# Apply the deployment to the cluster
+kubectl apply -f deployment.yaml
+
+# Expose the deployment as a service
+kubectl expose deployment webapp08 --type=LoadBalancer --name=webapp08-service --port=80 --target-port=80
+
+echo "Application has been deployed successfully. You can check the service with:"
+echo "kubectl get services webapp08-service"
