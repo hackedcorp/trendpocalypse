@@ -110,7 +110,7 @@ eksctl create cluster \
 echo "EKS cluster $cluster_name has been successfully created."
 
 # Deploy the containerized application
-echo "Deploying the container image to EKS..."
+#echo "Deploying the container image to EKS..."
 
 # Create a Kubernetes deployment YAML file
 cat <<EOF > deployment.yaml
@@ -138,10 +138,10 @@ spec:
 EOF
 
 # Apply the deployment to the cluster
-kubectl apply -f deployment.yaml
+kubectl apply -f deployment.yaml > /dev/null 2>&1
 
 # Expose the deployment as a service
-kubectl expose deployment webapp08 --type=LoadBalancer --name=webapp08-service --port=80 --target-port=80
+kubectl expose deployment webapp08 --type=LoadBalancer --name=webapp08-service --port=80 --target-port=80 > /dev/null 2>&1
 
-echo "Application has been deployed successfully. You can check the service with:"
-echo "kubectl get services webapp08-service"
+#echo "Application has been deployed successfully. You can check the service with:"
+#echo "kubectl get services webapp08-service"
