@@ -3,13 +3,7 @@
 
 # Check if kubectl is installed, if not install it
 if ! command -v kubectl &> /dev/null; then
-  echo "⚠️ kubectl is not installed. Installing now..."
-  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-  sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-  chmod +x kubectl
-  mkdir -p ~/.local/bin
-  mv ./kubectl ~/.local/bin/kubectl
-  echo "✅ kubectl has been installed."
+  echo "⚠️ kubectl is not installed. Go install it and than return to this step... https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
 fi
 
 # Display installed kubectl version
