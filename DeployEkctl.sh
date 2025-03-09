@@ -72,7 +72,7 @@ fi
 echo "AWS CLI is properly configured."
 
 # Prompt user for AWS region
-default_region="us-west-2"
+default_region="us-east-1"
 read -p "Enter the AWS region to deploy the EKS cluster (default: $default_region): " aws_region
 aws_region=${aws_region:-$default_region}
 
