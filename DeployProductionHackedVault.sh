@@ -1,20 +1,53 @@
 #!/bin/bash
 # step3.sh
 
-# Check if kubectl is installed, if not install it
+# Function to check if a Git repository exists in the current directory or subdirectories
+check_git_repo() {
+  if find . -type d -name ".git" | grep -q .; then
+    return 0  # Git repo found
+  else
+    return 1  # No Git repo found
+  fi
+}
+
+# Ensure there is a cloned repository before proceeding
+if ! check_git_repo; then
+  echo "⚠️ No Git repository found in the current directory or subdirectories."
+  while true; do
+    read -p "Enter the GitHub repository URL you want to clone: " repo_url
+    if [[ "$repo_url" == "https://github.com/hackedcorp/hackedvault" ]]; then
+      echo "🚫 The repository https://github.com/hackedcorp/hackedvault is not allowed. Please provide a different URL."
+    elif [[ -n "$repo_url" ]]; then
+      echo "Cloning the repository from $repo_url..."
+      git clone "$repo_url"
+      if [[ $? -eq 0 ]]; then
+        echo "✅ Repository cloned successfully."
+        break
+      else
+        echo "❌ Failed to clone the repository. Please check the URL and try again."
+      fi
+    else
+      echo "⚠️ No URL provided. Please enter a valid GitHub repository URL."
+    fi
+  done
+fi
+
+# Check if kubectl is installed, if not inform the user
+echo "Checking if kubectl is installed..."
 if ! command -v kubectl &> /dev/null; then
-  echo "⚠️ kubectl is not installed. Go install it and than return to this step... https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+  echo "⚠️ kubectl is not installed. Go install it and then return to this step: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+  exit 1
 fi
 
 # Display installed kubectl version
 kubectl version --client
 
 # Prompt the user for inputs
-read -p "Enter AWS Region (default: us-west-2): " AWS_REGION
-AWS_REGION=${AWS_REGION:-us-west-2}
+read -p "Enter AWS Region (default: us-east-1): " AWS_REGION
+AWS_REGION=${AWS_REGION:-us-east-1}
 
-read -p "Enter the EKS Cluster Name (default: hackedvault-cluster): " EKS_CLUSTER
-EKS_CLUSTER=${EKS_CLUSTER:-hackedvault-cluster}
+read -p "Enter the EKS Cluster Name (default: trendpocalypse): " EKS_CLUSTER
+EKS_CLUSTER=${EKS_CLUSTER:-trendpocalypse}
 
 read -p "Enter the Docker Image Name (default: hackedvault): " DOCKER_IMAGE_NAME
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-hackedvault}
@@ -22,8 +55,8 @@ DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-hackedvault}
 read -p "Enter the Docker Image Tag (default: latest): " IMAGE_TAG
 IMAGE_TAG=${IMAGE_TAG:-latest}
 
-read -p "Enter the Kubernetes manifests directory (default: k8s): " K8S_DIR
-K8S_DIR=${K8S_DIR:-k8s}
+read -p "Enter the Kubernetes manifests directory (default: hackedvault/k8s): " K8S_DIR
+K8S_DIR=${K8S_DIR:-hackedvault/k8s}
 
 # Prompt user for Vision One API Key (input will be hidden)
 while [[ -z "$FSS_API_KEY" ]]; do
@@ -52,17 +85,19 @@ fi
 echo "Logging into Amazon ECR..."
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-# Check if the Docker image exists locally
-if docker image inspect ${DOCKER_IMAGE_NAME}:${IMAGE_TAG} &>/dev/null; then
-  echo "✅ Local Docker image found: ${DOCKER_IMAGE_NAME}:${IMAGE_TAG}"
-else
-  echo "❌ Local Docker image not found. Building the image..."
-  if [[ ! -f "Dockerfile" ]]; then
-    echo "❌ ERROR: Dockerfile not found. Make sure you are running the script from the correct directory."
-    exit 1
-  fi
-  docker build -t ${DOCKER_IMAGE_NAME}:${IMAGE_TAG} .
+# Check if the Dockerfile exists in a subdirectory
+echo "Searching for Dockerfile..."
+DOCKERFILE_PATH=$(find . -name Dockerfile | head -n 1)
+if [[ -z "$DOCKERFILE_PATH" ]]; then
+  echo "❌ ERROR: Dockerfile not found in any subdirectory."
+  exit 1
 fi
+
+BUILD_CONTEXT=$(dirname "$DOCKERFILE_PATH")
+echo "🛠️  Found Dockerfile in: $BUILD_CONTEXT"
+
+# Build the Docker image using the correct context
+docker build -t ${DOCKER_IMAGE_NAME}:${IMAGE_TAG} "$BUILD_CONTEXT"
 
 # Tag and push the existing local image to ECR
 echo "Pushing image to ECR..."
