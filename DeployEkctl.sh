@@ -50,6 +50,19 @@ fi
 
 kubectl version --client
 
+# Check if Helm is installed
+if ! command -v helm &>/dev/null; then
+    echo "Installing Helm..."
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod 700 get_helm.sh
+    ./get_helm.sh
+    echo "Helm installed successfully."
+else
+    echo "Helm is already installed."
+fi
+
+helm version
+
 # Check AWS configuration
 if ! aws sts get-caller-identity &>/dev/null; then
     echo "AWS CLI is not properly configured. Please run 'aws configure' first."
