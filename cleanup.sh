@@ -20,11 +20,11 @@ if [[ "$CLEANUP_OPTION" == "1" || "$CLEANUP_OPTION" == "3" ]]; then
     echo "🛠 Cleaning up Kubernetes resources..."
 
     # Prompt for AWS and Kubernetes details
-    read -p "Enter AWS Region (default: us-west-2): " AWS_REGION
-    AWS_REGION=${AWS_REGION:-us-west-2}
+    read -p "Enter AWS Region (default: us-east-1): " AWS_REGION
+    AWS_REGION=${AWS_REGION:-us-east-1}
 
-    read -p "Enter the EKS Cluster Name (default: hackedvault-cluster): " EKS_CLUSTER
-    EKS_CLUSTER=${EKS_CLUSTER:-hackedvault-cluster}
+    read -p "Enter the EKS Cluster Name (default: trendpocalypse): " EKS_CLUSTER
+    EKS_CLUSTER=${EKS_CLUSTER:-trendpocalypse}
 
     read -p "Enter the Docker Image Name (default: hackedvault): " DOCKER_IMAGE_NAME
     DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-hackedvault}
