@@ -2,7 +2,7 @@
 
 # Installing essential packages
 sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common vim unzip iputils-ping jq unzip
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common vim unzip iputils-ping jq
 
 # Downloading docker install script
 wget https://get.docker.com/ -O install_docker.sh
